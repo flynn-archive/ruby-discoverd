@@ -1,0 +1,53 @@
+FROM ubuntu:precise
+
+# Set DEBIAN_FRONTEND to non-interactive to avoid useless warnings
+ENV DEBIAN_FRONTEND noninteractive
+
+# Update apt sources
+RUN apt-get update
+
+# Support adding PPAs
+RUN apt-get install -y python-software-properties
+
+# Install git
+RUN add-apt-repository -y ppa:git-core/ppa && \
+    apt-get update && \
+    apt-get install -y git
+
+# Install Go
+RUN add-apt-repository -y ppa:tsuru/golang && \
+    apt-get update && \
+    apt-get install -y golang
+
+# Install Ruby
+RUN apt-get install -y ruby1.9.3
+
+# Set the GOPATH
+ENV GOPATH /go
+
+# Install etcd v0.3.0
+RUN apt-get install -y wget && \
+    wget -O - -q "https://github.com/coreos/etcd/releases/download/v0.3.0/etcd-v0.3.0-linux-amd64.tar.gz" | \
+      tar xz --strip-components=1 -C /usr/local/bin
+
+# Install godep (requires mercurial)
+RUN apt-get install -y mercurial && \
+    go get github.com/kr/godep
+
+# Clone and build discoverd
+RUN git clone -b master https://github.com/flynn/discoverd.git /go/src/github.com/flynn/discoverd && \
+    cd /go/src/github.com/flynn/discoverd && \
+    /go/bin/godep go install
+
+# Add discoverd-ruby
+ADD . /discoverd-ruby
+
+# Bundle the gems (needs build tools)
+RUN apt-get install -y build-essential && \
+    gem install --no-ri --no-rdoc bundler && \
+    bundle install --gemfile /discoverd-ruby/Gemfile
+
+# Run etcd, discoverd then the integration tests
+CMD bash -c "/usr/local/bin/etcd >/dev/null &" && \
+    bash -c "/go/bin/discoverd >/dev/null &" && \
+    bash -c "cd /discoverd-ruby && bundle exec ruby -Ilib:test test/integration/test_*.rb"
