@@ -86,6 +86,25 @@ module Discover
   class Service
     include Celluloid
 
+    class Update < Struct.new(:address, :name, :online)
+      def self.from_hash(hash)
+        new *hash.values_at("Addr", "Name", "Online")
+      end
+
+      def online?
+        online == true
+      end
+
+      def offline?
+        !online?
+      end
+
+      # The sentinel update marks the end of existing updates from discoverd
+      def sentinel?
+        address.empty? && name.empty?
+      end
+    end
+
     def initialize(client, name)
       @client = client
       @name = name
@@ -96,12 +115,12 @@ module Discover
 
     def online
       @current.wait if @current
-      @instances.select { |k,v| v[:online] }
+      @instances.values.select(&:online?)
     end
 
     def offline
       @current.wait if @current
-      @instances.select { |k,v| !v[:online] }
+      @instances.values.select(&:offline?)
     end
 
     def each_update(&block)
@@ -112,11 +131,14 @@ module Discover
 
     def process_updates
       @client.request('Agent.Subscribe', {'Name' => @name}) do |update|
-        if @current && update['Addr'] == '' && update['Name'] == ''
+        update = Update.from_hash(update)
+
+        if @current && update.sentinel?
           c, @current = @current, nil
           c.broadcast
         end
-        @instances[update['Addr']] = { online: update['Online'], attrs: update['Attrs'] }
+
+        @instances[update.address] = update
       end
       # TODO: handle disconnect
     end
