@@ -46,8 +46,3 @@ ADD . /discoverd-ruby
 RUN apt-get install -y build-essential && \
     gem install --no-ri --no-rdoc bundler && \
     bundle install --gemfile /discoverd-ruby/Gemfile
-
-# Run etcd, discoverd then the integration tests
-CMD bash -c "/usr/local/bin/etcd >/dev/null &" && \
-    bash -c "/go/bin/discoverd >/dev/null &" && \
-    bash -c "cd /discoverd-ruby && bundle exec ruby -Ilib:test test/integration/test_*.rb"
