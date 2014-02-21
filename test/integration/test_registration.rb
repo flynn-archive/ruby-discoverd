@@ -9,6 +9,8 @@ class TestRegistration < Minitest::Test
 
     @discoverd_pid = spawn("discoverd", [:out, :err] => "/dev/null")
     sleep(0.2)
+
+    @client = Discover::Client.new
   end
 
   def teardown
@@ -19,16 +21,14 @@ class TestRegistration < Minitest::Test
   end
 
   def test_service_is_online_after_registration
-    client = Discover::Client.new
-
     name       = "foo"
     port       = 1111
     ip         = "127.0.0.1"
     attributes = { "foo" => "bar" }
 
-    client.register name, port, ip, attributes
+    @client.register name, port, ip, attributes
 
-    service = client.service(name)
+    service = @client.service(name)
     assert_equal 1, service.online.size
 
     instance = service.online.first
@@ -39,26 +39,44 @@ class TestRegistration < Minitest::Test
   end
 
   def test_changing_service_attributes
-    client = Discover::Client.new
-
     name       = "foo"
     port       = 1111
     ip         = "127.0.0.1"
     attributes = { "foo" => "bar" }
 
-    client.register name, port, ip, attributes
+    @client.register name, port, ip, attributes
 
-    service = client.service(name)
+    service = @client.service(name)
     assert_equal 1, service.online.size
 
     instance = service.online.first
     assert_equal attributes, instance.attributes
 
     new_attributes = { "foo" => "baz" }
-    client.register name, port, ip, new_attributes
+    @client.register name, port, ip, new_attributes
     assert_equal 1, service.online.size
 
     instance = service.online.first
     assert_equal new_attributes, instance.attributes
+  end
+
+  def test_service_with_filters
+    name = "foo"
+    ip   = "127.0.0.1"
+
+    matching_attributes     = { "foo" => "bar", "baz" => "qux" }
+    non_matching_attributes = { "foo" => "baz", "baz" => "qux" }
+
+    @client.register name, 1111, ip, matching_attributes
+    @client.register name, 2222, ip, non_matching_attributes
+
+    service = @client.service(name)
+    assert_equal 2, service.online.size
+
+    filtered_service = @client.service(name, "foo" => "bar")
+    assert_equal 1, filtered_service.online.size
+
+    instance = filtered_service.online.first
+    assert_equal matching_attributes, instance.attributes
   end
 end

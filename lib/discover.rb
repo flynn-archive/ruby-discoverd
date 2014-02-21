@@ -8,8 +8,8 @@ module Discover
       @client = RPCClient.new(host, port)
     end
 
-    def service(name)
-      Service.new(@client, name)
+    def service(name, filters={})
+      Service.new(@client, name, filters)
     end
 
     def register(name, port=nil, ip=nil, attributes={})
@@ -106,9 +106,10 @@ module Discover
       end
     end
 
-    def initialize(client, name)
+    def initialize(client, name, filters={})
       @client = client
       @name = name
+      @filters = filters
       @current = Condition.new
       @instances = {}
       async.process_updates
@@ -137,11 +138,20 @@ module Discover
         if @current && update.sentinel?
           c, @current = @current, nil
           c.broadcast
+          next
         end
 
-        @instances[update.address] = update
+        if matches_filters?(update)
+          @instances[update.address] = update
+        end
       end
       # TODO: handle disconnect
+    end
+
+    def matches_filters?(update)
+      @filters.all? do |key, val|
+        update.attributes[key] == val
+      end
     end
   end
 
