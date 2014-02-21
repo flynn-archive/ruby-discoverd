@@ -13,6 +13,13 @@ module Discover
     end
 
     def register(name, port=nil, ip=nil)
+      args = {
+        "Name" => name,
+        "Addr" => "#{ip}:#{port}"
+      }
+
+      @client.request('Agent.Register', args)
+
       # spawn heartbeat actor
       # return Discover::Registration
     end
