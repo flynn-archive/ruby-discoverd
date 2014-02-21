@@ -1,6 +1,23 @@
 require "test_helper"
+require "securerandom"
 
 class TestRegistration < Minitest::Test
+  def setup
+    etcd_name = SecureRandom.hex
+    @etcd_pid = spawn("etcd -name #{etcd_name}", [:out, :err] => "/dev/null")
+    sleep(0.2)
+
+    @discoverd_pid = spawn("discoverd", [:out, :err] => "/dev/null")
+    sleep(0.2)
+  end
+
+  def teardown
+    sleep(0.2)
+    Process.kill("TERM", @discoverd_pid)
+    Process.kill("TERM", @etcd_pid)
+    Process.waitall
+  end
+
   def test_service_is_online_after_registration
     client = Discover::Client.new
 
