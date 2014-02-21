@@ -8,14 +8,15 @@ module Discover
       @client = RPCClient.new(host, port)
     end
 
-    def service(name)
-      Service.new(@client, name)
+    def service(name, filters={})
+      Service.new(@client, name, filters)
     end
 
-    def register(name, port=nil, ip=nil)
+    def register(name, port=nil, ip=nil, attributes={})
       args = {
-        "Name" => name,
-        "Addr" => "#{ip}:#{port}"
+        "Name"  => name,
+        "Addr"  => "#{ip}:#{port}",
+        "Attrs" => attributes
       }
 
       @client.request('Agent.Register', args)
@@ -86,9 +87,29 @@ module Discover
   class Service
     include Celluloid
 
-    def initialize(client, name)
+    class Update < Struct.new(:address, :attributes, :name, :online)
+      def self.from_hash(hash)
+        new *hash.values_at("Addr", "Attrs", "Name", "Online")
+      end
+
+      def online?
+        online == true
+      end
+
+      def offline?
+        !online?
+      end
+
+      # The sentinel update marks the end of existing updates from discoverd
+      def sentinel?
+        address.empty? && name.empty?
+      end
+    end
+
+    def initialize(client, name, filters={})
       @client = client
       @name = name
+      @filters = filters
       @current = Condition.new
       @instances = {}
       async.process_updates
@@ -96,12 +117,12 @@ module Discover
 
     def online
       @current.wait if @current
-      @instances.select { |k,v| v[:online] }
+      @instances.values.select(&:online?)
     end
 
     def offline
       @current.wait if @current
-      @instances.select { |k,v| !v[:online] }
+      @instances.values.select(&:offline?)
     end
 
     def each_update(&block)
@@ -112,13 +133,25 @@ module Discover
 
     def process_updates
       @client.request('Agent.Subscribe', {'Name' => @name}) do |update|
-        if @current && update['Addr'] == '' && update['Name'] == ''
+        update = Update.from_hash(update)
+
+        if @current && update.sentinel?
           c, @current = @current, nil
           c.broadcast
+          next
         end
-        @instances[update['Addr']] = { online: update['Online'], attrs: update['Attrs'] }
+
+        if matches_filters?(update)
+          @instances[update.address] = update
+        end
       end
       # TODO: handle disconnect
+    end
+
+    def matches_filters?(update)
+      @filters.all? do |key, val|
+        update.attributes[key] == val
+      end
     end
   end
 
