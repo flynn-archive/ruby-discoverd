@@ -12,10 +12,11 @@ module Discover
       Service.new(@client, name)
     end
 
-    def register(name, port=nil, ip=nil)
+    def register(name, port=nil, ip=nil, attributes={})
       args = {
-        "Name" => name,
-        "Addr" => "#{ip}:#{port}"
+        "Name"  => name,
+        "Addr"  => "#{ip}:#{port}",
+        "Attrs" => attributes
       }
 
       @client.request('Agent.Register', args)
@@ -86,9 +87,9 @@ module Discover
   class Service
     include Celluloid
 
-    class Update < Struct.new(:address, :name, :online)
+    class Update < Struct.new(:address, :attributes, :name, :online)
       def self.from_hash(hash)
-        new *hash.values_at("Addr", "Name", "Online")
+        new *hash.values_at("Addr", "Attrs", "Name", "Online")
       end
 
       def online?
