@@ -18,6 +18,9 @@ before_install:
   - godep go install
   - popd
 
+env:
+  - "HAS_DEPENDENCIES=true"
+
 notifications:
   irc:
     channels:
