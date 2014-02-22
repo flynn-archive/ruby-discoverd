@@ -4,4 +4,4 @@ FROM discoverd-ruby-base
 ADD . /discoverd-ruby
 
 # Run etcd, discoverd then the integration tests
-CMD bash -c "cd /discoverd-ruby && PATH=\${PATH}:/go/bin bundle exec ruby -Ilib:test test/integration/test_*.rb"
+CMD bash -c "cd /discoverd-ruby && PATH=\${PATH}:/go/bin bundle exec rake test:integration"

@@ -1,0 +1,33 @@
+language: ruby
+
+rvm:
+  - 1.9.3
+  - 2.0.0
+  - 2.1.0
+  - rbx
+
+before_install:
+  - export GOPATH=$HOME/gopath
+  - export PATH=$HOME/gopath/bin:$PATH
+  - go get github.com/kr/godep
+  - wget https://github.com/coreos/etcd/releases/download/v0.3.0/etcd-v0.3.0-linux-amd64.tar.gz
+  - tar xzf etcd-v0.3.0-linux-amd64.tar.gz
+  - mv etcd-v0.3.0-linux-amd64/etcd $GOPATH/bin
+  - git clone -b master https://github.com/flynn/discoverd.git $GOPATH/src/github.com/flynn/discoverd
+  - pushd $GOPATH/src/github.com/flynn/discoverd
+  - godep go install
+  - popd
+
+env:
+  - "HAS_DEPENDENCIES=true"
+
+notifications:
+  irc:
+    channels:
+      - "chat.freenode.net#flynn"
+    use_notice: true
+    skip_join: true
+    on_success: change
+    on_failure: always
+    template:
+      - "%{repository}/%{branch} - %{commit}: %{message} %{build_url}"

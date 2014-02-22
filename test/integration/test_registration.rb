@@ -54,6 +54,8 @@ class TestRegistration < Minitest::Test
 
     new_attributes = { "foo" => "baz" }
     @client.register name, port, ip, new_attributes
+
+    service = @client.service(name)
     assert_equal 1, service.online.size
 
     instance = service.online.first
