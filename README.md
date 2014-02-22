@@ -1,5 +1,7 @@
 # Discover
 
+[![Build Status](https://travis-ci.org/flynn/discoverd-ruby.png?branch=master)](https://travis-ci.org/flynn/discoverd-ruby)
+
 TODO: Write a gem description
 
 ## Installation
