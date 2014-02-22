@@ -1,5 +1,8 @@
 require "bundler/gem_tasks"
 
+desc "Run all tests by default"
+task :default => "test:integration"
+
 namespace :test do
   desc "Run the integration tests in a Docker container"
   task :integration => :build_image do
