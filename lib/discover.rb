@@ -106,12 +106,34 @@ module Discover
       end
     end
 
+    class Watcher
+      include Celluloid
+
+      def initialize(block)
+        @block     = block
+        @condition = Condition.new
+      end
+
+      def notify(update)
+        @block.call update
+      end
+
+      def done
+        @condition.broadcast
+      end
+
+      def wait
+        @condition.wait
+      end
+    end
+
     def initialize(client, name, filters={})
       @client = client
       @name = name
       @filters = filters
       @current = Condition.new
       @instances = {}
+      @watchers = []
       async.process_updates
     end
 
@@ -125,8 +147,16 @@ module Discover
       @instances.values.select(&:offline?)
     end
 
-    def each_update(&block)
-      # add to actor subscription list
+    def each_update(include_current = true, &block)
+      watcher = Watcher.new(block)
+
+      if include_current
+        online.each { |u| watcher.notify u }
+      end
+
+      @watchers << watcher
+
+      watcher.wait
     end
 
     private
@@ -143,8 +173,10 @@ module Discover
 
         if matches_filters?(update)
           @instances[update.address] = update
+          @watchers.each { |w| w.notify update }
         end
       end
+      @watchers.each(&:done)
       # TODO: handle disconnect
     end
 

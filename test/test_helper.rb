@@ -7,3 +7,5 @@ require "minitest/autorun"
 
 # Only log Celluloid errors
 Celluloid.logger.level = Logger::ERROR
+
+require "support/discover_integration_test"
