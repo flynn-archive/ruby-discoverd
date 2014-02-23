@@ -96,10 +96,6 @@ module Discover
         online == true
       end
 
-      def offline?
-        !online?
-      end
-
       # The sentinel update marks the end of existing updates from discoverd
       def sentinel?
         address.empty? && name.empty?
@@ -139,12 +135,7 @@ module Discover
 
     def online
       @current.wait if @current
-      @instances.values.select(&:online?)
-    end
-
-    def offline
-      @current.wait if @current
-      @instances.values.select(&:offline?)
+      @instances.values
     end
 
     def each_update(include_current = true, &block)
@@ -172,7 +163,12 @@ module Discover
         end
 
         if matches_filters?(update)
-          @instances[update.address] = update
+          if update.online?
+            @instances[update.address] = update
+          else
+            @instances.delete(update.address)
+          end
+
           @watchers.each { |w| w.notify update }
         end
       end
