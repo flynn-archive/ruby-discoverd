@@ -13,6 +13,7 @@ class DiscoverIntegrationTest < Minitest::Test
   end
 
   def teardown
+    @client.unregister_all
     sleep(0.2)
     Process.kill("TERM", @discoverd_pid)
     Process.kill("TERM", @etcd_pid)
