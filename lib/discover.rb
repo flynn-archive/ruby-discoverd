@@ -209,13 +209,21 @@ module Discover
     end
 
     def each_update(include_current = true, &block)
-      watcher = Watcher.new(block)
+      # Since updates are coming from a Proc being called in a different
+      # Actor (the RPCClient), we need to suspend update notifications
+      # here to avoid race conditions where we could potentially miss
+      # updates between initializing the Watcher and adding it to @watchers
+      watcher = pause_updates do
+        watcher = Watcher.new(block)
 
-      if include_current
-        online.each { |u| watcher.notify u }
+        if include_current
+          online.each { |u| watcher.notify u }
+        end
+
+        @watchers << watcher
+
+        watcher
       end
-
-      @watchers << watcher
 
       watcher.wait
     end
@@ -239,6 +247,7 @@ module Discover
             @instances.delete(update.address)
           end
 
+          @pause_updates.wait if @pause_updates
           @watchers.each { |w| w.notify update }
         end
       end
@@ -250,6 +259,17 @@ module Discover
       @filters.all? do |key, val|
         update.attributes[key] == val
       end
+    end
+
+    def pause_updates(&block)
+      @pause_updates = Condition.new
+
+      result = block.call
+
+      c, @pause_updates = @pause_updates, nil
+      c.broadcast
+
+      result
     end
   end
 end
