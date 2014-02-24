@@ -8,8 +8,12 @@ module Discover
       @client = RPCClient.new(host, port)
     end
 
+    def request(*args, &block)
+      @client.request(*args, &block)
+    end
+
     def service(name, filters={})
-      Service.new(@client, name, filters)
+      Service.new(self, name, filters)
     end
 
     def register(name, port=nil, ip=nil, attributes={})
