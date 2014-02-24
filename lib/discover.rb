@@ -153,9 +153,9 @@ module Discover
   class Service
     include Celluloid
 
-    class Update < Struct.new(:address, :attributes, :name, :online)
+    class Update < Struct.new(:address, :attributes, :created, :name, :online)
       def self.from_hash(hash)
-        new *hash.values_at("Addr", "Attrs", "Name", "Online")
+        new *hash.values_at("Addr", "Attrs", "Created", "Name", "Online")
       end
 
       def attributes
@@ -206,6 +206,10 @@ module Discover
     def online
       @current.wait if @current
       @instances.values
+    end
+
+    def leader
+      online.sort_by(&:created).first
     end
 
     def each_update(include_current = true, &block)
