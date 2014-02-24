@@ -17,6 +17,25 @@ class TestRegistration < DiscoverIntegrationTest
     assert_equal "#{ip}:#{port}", instance.address
     assert_equal attributes, instance.attributes
     assert instance.online?
+
+    sleep(11)
+    assert_equal 1, service.online.size
+  end
+
+  def test_service_is_offline_after_unregister
+    name       = "foo"
+    port       = 1111
+    ip         = "127.0.0.1"
+
+    registration = @client.register name, port, ip
+
+    service = @client.service(name)
+    assert_equal 1, service.online.size
+
+    registration.unregister
+
+    service = @client.service(name)
+    assert_equal 0, service.online.size
   end
 
   def test_changing_service_attributes

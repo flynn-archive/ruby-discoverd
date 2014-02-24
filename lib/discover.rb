@@ -4,25 +4,91 @@ require 'yajl'
 
 module Discover
   class Client
+    include Celluloid
+
     def initialize(host='127.0.0.1', port=1111)
-      @client = RPCClient.new(host, port)
+      @client        = RPCClient.new(host, port)
+      @registrations = []
+    end
+
+    def request(*args, &block)
+      @client.request(*args, &block)
     end
 
     def service(name, filters={})
-      Service.new(@client, name, filters)
+      Service.new(self, name, filters)
     end
 
     def register(name, port=nil, ip=nil, attributes={})
+      reg = Registration.new(self, name, "#{ip}:#{port}", attributes)
+      @registrations << reg
+      reg.register
+      reg
+    end
+
+    def remove_registration(reg)
+      @registrations.delete(reg)
+    end
+
+    def unregister_all
+      @registrations.each(&:unregister)
+    end
+  end
+
+  class Registration
+    include Celluloid
+
+    HEARTBEAT_INTERVAL = 5
+
+    def initialize(client, name, address, attributes = {})
+      @client     = client
+      @name       = name
+      @address    = address
+      @attributes = attributes
+    end
+
+    def register
+      send_register_request
+      start_heartbeat
+    end
+
+    def unregister
+      stop_heartbeat
+      send_unregister_request
+      @client.remove_registration(self)
+    end
+
+    def send_register_request
       args = {
-        "Name"  => name,
-        "Addr"  => "#{ip}:#{port}",
-        "Attrs" => attributes
+        "Name"  => @name,
+        "Addr"  => @address,
+        "Attrs" => @attributes
       }
 
-      @client.request('Agent.Register', args)
+      @client.request("Agent.Register", args).value
+    end
 
-      # spawn heartbeat actor
-      # return Discover::Registration
+    def send_unregister_request
+      args = {
+        "Name"  => @name,
+        "Addr"  => @address
+      }
+
+      @client.request("Agent.Unregister", args).value
+    end
+
+    def start_heartbeat
+      @heartbeat = every(HEARTBEAT_INTERVAL) do
+        @client.request(
+          "Agent.Heartbeat",
+          "Name" => @name,
+          "Addr" => @address
+        )
+      end
+    end
+
+    def stop_heartbeat
+      @heartbeat.cancel
     end
   end
 
@@ -90,6 +156,10 @@ module Discover
     class Update < Struct.new(:address, :attributes, :name, :online)
       def self.from_hash(hash)
         new *hash.values_at("Addr", "Attrs", "Name", "Online")
+      end
+
+      def attributes
+        super || {}
       end
 
       def online?
@@ -180,11 +250,6 @@ module Discover
       @filters.all? do |key, val|
         update.attributes[key] == val
       end
-    end
-  end
-
-  class Registration
-    def destroy
     end
   end
 end
