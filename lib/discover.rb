@@ -20,10 +20,11 @@ module Discover
     end
 
     def register(name, port=nil, ip=nil, attributes={})
-      reg = Registration.new(self, name, "#{ip}:#{port}", attributes)
-      @registrations << reg
-      reg.register
-      reg
+      _register(name, port, ip, attributes, false)
+    end
+
+    def register_and_standby(name, port=nil, ip=nil, attributes={})
+      _register(name, port, ip, attributes, true)
     end
 
     def remove_registration(reg)
@@ -33,6 +34,14 @@ module Discover
     def unregister_all
       @registrations.each(&:unregister)
     end
+
+    private
+    def _register(name, port=nil, ip=nil, attributes={}, standby=false)
+      reg = Registration.new(self, name, "#{ip}:#{port}", attributes, standby)
+      @registrations << reg
+      reg.register
+      reg
+    end
   end
 
   class Registration
@@ -40,16 +49,18 @@ module Discover
 
     HEARTBEAT_INTERVAL = 5
 
-    def initialize(client, name, address, attributes = {})
+    def initialize(client, name, address, attributes = {}, standby = false)
       @client     = client
       @name       = name
       @address    = address
       @attributes = attributes
+      @standby    = standby
     end
 
     def register
       send_register_request
       start_heartbeat
+      wait_for_election if @standby
     end
 
     def unregister
@@ -89,6 +100,19 @@ module Discover
 
     def stop_heartbeat
       @heartbeat.cancel
+    end
+
+    def wait_for_election
+      async.watch_leaders
+      wait :elected
+    end
+
+    def watch_leaders
+      @client.service(@name).each_leader do |leader|
+        if leader.address == @address
+          signal :elected
+        end
+      end
     end
   end
 

@@ -1,6 +1,30 @@
 require "test_helper"
 
 class TestRegistration < DiscoverIntegrationTest
+  class TestRegisterStandby
+    include Celluloid
+
+    def initialize(client, name, port, ip)
+      @client  = client
+      @name    = name
+      @port    = port
+      @ip      = ip
+      @elected = false
+
+      async.register_and_standby
+    end
+
+    def elected?
+      @elected
+    end
+
+    def register_and_standby
+      @client.register_and_standby(@name, @port, @ip)
+
+      @elected = true
+    end
+  end
+
   def test_service_is_online_after_registration
     name       = "foo"
     port       = 1111
@@ -80,5 +104,25 @@ class TestRegistration < DiscoverIntegrationTest
 
     instance = filtered_service.online.first
     assert_equal matching_attributes, instance.attributes
+  end
+
+  def test_register_and_standby
+    name = "foo"
+    ip   = "127.0.0.1"
+
+    registrations = []
+    registrations << @client.register(name, 1111, ip)
+
+    standby = TestRegisterStandby.new @client, name, 2222, ip
+    sleep(0.2)
+    assert !standby.elected?
+
+    registrations << @client.register(name, 3333, ip)
+    sleep(0.2)
+    assert !standby.elected?
+
+    registrations.each(&:unregister)
+    sleep(0.2)
+    assert standby.elected?
   end
 end
