@@ -166,6 +166,10 @@ module Discover
         online == true
       end
 
+      def offline?
+        !online?
+      end
+
       # The sentinel update marks the end of existing updates from discoverd
       def sentinel?
         address.empty? && name.empty?
@@ -210,6 +214,18 @@ module Discover
 
     def leader
       online.sort_by(&:created).first
+    end
+
+    def each_leader(&block)
+      leader = self.leader
+      block.call leader if leader
+
+      each_update(false) do |update|
+        if leader.nil? || (update.offline? && leader && update.address == leader.address)
+          leader = self.leader
+          block.call leader if leader
+        end
+      end
     end
 
     def each_update(include_current = true, &block)
