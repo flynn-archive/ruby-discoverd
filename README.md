@@ -1,6 +1,6 @@
 # Discover
 
-[![Build Status](https://travis-ci.org/flynn/discoverd-ruby.png?branch=master)](https://travis-ci.org/flynn/discoverd-ruby)
+[![Build Status](https://travis-ci.org/flynn/ruby-discoverd.png?branch=master)](https://travis-ci.org/flynn/ruby-discoverd)
 
 TODO: Write a gem description
 

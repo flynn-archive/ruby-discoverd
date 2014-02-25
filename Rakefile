@@ -25,7 +25,7 @@ namespace :test do
         command << %{-e "#{key}"="#{val}"}
       end
 
-      command << "discoverd-ruby-test"
+      command << "ruby-discoverd-test"
 
       exec command.join(" ")
     end
@@ -46,7 +46,7 @@ namespace :test do
     file "tmp/.build_base_image" => BASE_IMAGE_FILE_DEPENDENCIES do
       FileUtils.ln_sf "Dockerfile.base", "Dockerfile"
 
-      unless system "docker build -rm=true -t discoverd-ruby-base ."
+      unless system "docker build -rm=true -t ruby-discoverd-base ."
         fail "failed to build the test Docker image, exiting"
       end
 
@@ -58,7 +58,7 @@ namespace :test do
     task :build_test_image do
       FileUtils.ln_sf "Dockerfile.test", "Dockerfile"
 
-      unless system "docker build -rm=true -t discoverd-ruby-test ."
+      unless system "docker build -rm=true -t ruby-discoverd-test ."
         fail "failed to build the test Docker image, exiting"
       end
     end

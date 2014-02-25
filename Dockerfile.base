@@ -39,10 +39,10 @@ RUN git clone -b master https://github.com/flynn/discoverd.git /go/src/github.co
     cd /go/src/github.com/flynn/discoverd && \
     /go/bin/godep go install
 
-# Add discoverd-ruby
-ADD . /discoverd-ruby
+# Add ruby-discoverd
+ADD . /ruby-discoverd
 
 # Bundle the gems (needs build tools)
 RUN apt-get install -y build-essential && \
     gem install --no-ri --no-rdoc bundler && \
-    bundle install --gemfile /discoverd-ruby/Gemfile
+    bundle install --gemfile /ruby-discoverd/Gemfile
