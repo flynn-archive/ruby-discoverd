@@ -16,7 +16,18 @@ namespace :test do
   else
     desc "Run the integration tests in a Docker container"
     task :integration => :build_image do
-      exec "docker run -i -t -e HAS_DEPENDENCIES=true discoverd-ruby-test"
+      command = []
+      command << "docker run -i -t"
+      command << "-e HAS_DEPENDENCIES=true"
+
+      # Pass through any env vars beginning with TEST
+      ENV.select { |k,v| k =~ /^TEST/ }.each_pair do |key, val|
+        command << %{-e "#{key}"="#{val}"}
+      end
+
+      command << "discoverd-ruby-test"
+
+      exec command.join(" ")
     end
 
     desc "Build the Docker image for running tests"
