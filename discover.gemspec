@@ -11,7 +11,7 @@ Gem::Specification.new do |spec|
   spec.summary       = %q{A discoverd client for Ruby}
   spec.description   = %q{A discoverd client for Ruby}
   spec.homepage      = ""
-  spec.license       = "MIT"
+  spec.license       = "BSD"
 
   spec.files         = `git ls-files`.split($/)
   spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
