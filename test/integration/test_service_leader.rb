@@ -21,7 +21,7 @@ class TestServiceLeader < DiscoverIntegrationTest
   end
 
   def test_leader_is_oldest_online_service
-    name = "foo"
+    name = "leader-is-oldest"
     ip   = "127.0.0.1"
 
     service = @client.service(name)
@@ -47,7 +47,7 @@ class TestServiceLeader < DiscoverIntegrationTest
   end
 
   def test_leader_changes
-    name = "foo"
+    name = "leader-changes"
     ip   = "127.0.0.1"
 
     service = @client.service(name)

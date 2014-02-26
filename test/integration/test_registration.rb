@@ -26,7 +26,7 @@ class TestRegistration < DiscoverIntegrationTest
   end
 
   def test_service_is_online_after_registration
-    name       = "foo"
+    name       = "service-online"
     port       = 1111
     ip         = "127.0.0.1"
     attributes = { "foo" => "bar" }
@@ -47,7 +47,7 @@ class TestRegistration < DiscoverIntegrationTest
   end
 
   def test_service_is_offline_after_unregister
-    name       = "foo"
+    name       = "service-offline"
     port       = 1111
     ip         = "127.0.0.1"
 
@@ -63,7 +63,7 @@ class TestRegistration < DiscoverIntegrationTest
   end
 
   def test_changing_service_attributes
-    name       = "foo"
+    name       = "change-attributes"
     port       = 1111
     ip         = "127.0.0.1"
     attributes = { "foo" => "bar" }
@@ -87,7 +87,7 @@ class TestRegistration < DiscoverIntegrationTest
   end
 
   def test_service_with_filters
-    name = "foo"
+    name = "service-filters"
     ip   = "127.0.0.1"
 
     matching_attributes     = { "foo" => "bar", "baz" => "qux" }
@@ -107,7 +107,7 @@ class TestRegistration < DiscoverIntegrationTest
   end
 
   def test_register_and_standby
-    name = "foo"
+    name = "register-and-standby"
     ip   = "127.0.0.1"
 
     registrations = []

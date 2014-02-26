@@ -20,7 +20,7 @@ class TestServiceUpdates < DiscoverIntegrationTest
   end
 
   def test_registration_triggers_updates
-    name = "foo"
+    name = "registration-updates"
     ip   = "127.0.0.1"
 
     service = @client.service(name)
