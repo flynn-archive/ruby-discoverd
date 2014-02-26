@@ -21,7 +21,7 @@ class TestServiceLeader < DiscoverIntegrationTest
   end
 
   def test_leader_is_oldest_online_service
-    name = "foo"
+    name = "leader-is-oldest"
     ip   = "127.0.0.1"
 
     service = @client.service(name)
@@ -29,24 +29,25 @@ class TestServiceLeader < DiscoverIntegrationTest
 
     registrations = []
     registrations << @client.register(name, 1111, ip)
+    sleep(0.5)
     assert_equal "#{ip}:1111", service.leader.address
 
     registrations << @client.register(name, 2222, ip)
     registrations << @client.register(name, 3333, ip)
-    sleep(0.2)
+    sleep(0.5)
     assert_equal "#{ip}:1111", service.leader.address
 
     registrations.shift.unregister
-    sleep(0.2)
+    sleep(0.5)
     assert_equal "#{ip}:2222", service.leader.address
 
     registrations.each(&:unregister)
-    sleep(0.2)
+    sleep(0.5)
     assert_nil service.leader
   end
 
   def test_leader_changes
-    name = "foo"
+    name = "leader-changes"
     ip   = "127.0.0.1"
 
     service = @client.service(name)
@@ -55,23 +56,23 @@ class TestServiceLeader < DiscoverIntegrationTest
 
     registrations = []
     registrations << @client.register(name, 1111, ip)
-    sleep(0.2)
+    sleep(0.5)
     assert_equal 1, watcher.leader_updates.size
     assert_equal "#{ip}:1111", watcher.leader_updates.last.address
 
     registrations << @client.register(name, 2222, ip)
     registrations << @client.register(name, 3333, ip)
-    sleep(0.2)
+    sleep(0.5)
     assert_equal 1, watcher.leader_updates.size
     assert_equal "#{ip}:1111", watcher.leader_updates.last.address
 
     registrations.shift.unregister
-    sleep(0.2)
+    sleep(0.5)
     assert_equal 2, watcher.leader_updates.size
     assert_equal "#{ip}:2222", watcher.leader_updates.last.address
 
     registrations.each(&:unregister)
-    sleep(0.2)
+    sleep(0.5)
     assert_equal 3, watcher.leader_updates.size
     assert_equal "#{ip}:3333", watcher.leader_updates.last.address
   end
