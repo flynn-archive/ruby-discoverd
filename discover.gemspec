@@ -6,8 +6,8 @@ require 'discover/version'
 Gem::Specification.new do |spec|
   spec.name          = "discover"
   spec.version       = Discover::VERSION
-  spec.authors       = ["Jonathan Rudenberg"]
-  spec.email         = ["jonathan@titanous.com"]
+  spec.authors       = ["Jonathan Rudenberg", "Lewis Marshall"]
+  spec.email         = ["jonathan@titanous.com", "lewis@lmars.net"]
   spec.summary       = %q{A discoverd client for Ruby}
   spec.description   = %q{A discoverd client for Ruby}
   spec.homepage      = ""
