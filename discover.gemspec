@@ -8,8 +8,8 @@ Gem::Specification.new do |spec|
   spec.version       = Discover::VERSION
   spec.authors       = ["Jonathan Rudenberg"]
   spec.email         = ["jonathan@titanous.com"]
-  spec.summary       = %q{TODO: Write a short summary. Required.}
-  spec.description   = %q{TODO: Write a longer description. Optional.}
+  spec.summary       = %q{A discoverd client for Ruby}
+  spec.description   = %q{A discoverd client for Ruby}
   spec.homepage      = ""
   spec.license       = "MIT"
 

@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/flynn/ruby-discoverd.png?branch=master)](https://travis-ci.org/flynn/ruby-discoverd)
 
-TODO: Write a gem description
+A [discoverd](https://github.com/flynn/discoverd) client for Ruby.
 
 ## Installation
 
