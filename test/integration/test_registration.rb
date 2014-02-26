@@ -114,15 +114,15 @@ class TestRegistration < DiscoverIntegrationTest
     registrations << @client.register(name, 1111, ip)
 
     standby = TestRegisterStandby.new @client, name, 2222, ip
-    sleep(0.2)
+    sleep(0.5)
     assert !standby.elected?
 
     registrations << @client.register(name, 3333, ip)
-    sleep(0.2)
+    sleep(0.5)
     assert !standby.elected?
 
     registrations.each(&:unregister)
-    sleep(0.2)
+    sleep(0.5)
     assert standby.elected?
   end
 end
