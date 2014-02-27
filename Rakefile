@@ -1,14 +1,18 @@
 require "bundler/gem_tasks"
+require "rake/testtask"
 
-desc "Run all tests by default"
-task :default => "test:integration"
+desc "Run all tests"
+task :default => ["test:unit", "test:integration"]
 
 namespace :test do
+  Rake::TestTask.new(:unit) do |t|
+    t.libs << "test"
+    t.pattern = "test/unit/test_*.rb"
+  end
+
   # If HAS_DEPENDENCIES is set then we just run the tests, otherwise we spin up a
   # Docker container with all the dependencies installed and run the tests inside that
   if ENV["HAS_DEPENDENCIES"]
-    require "rake/testtask"
-
     Rake::TestTask.new(:integration) do |t|
       t.libs << "test"
       t.pattern = "test/integration/test_*.rb"
