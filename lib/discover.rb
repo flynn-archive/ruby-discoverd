@@ -1,12 +1,14 @@
-require 'discover/version'
+require "uri"
 require "rpcplus"
 
 module Discover
   class Client
     include Celluloid
 
-    def initialize(host='127.0.0.1', port=1111)
-      @client        = RPCPlus::Client.new(host, port)
+    def initialize(address = nil)
+      uri = parse(address || ENV["DISCOVERD"] || "127.0.0.1:1111")
+
+      @client        = RPCPlus::Client.new(uri.host, uri.port)
       @registrations = []
     end
 
@@ -35,6 +37,12 @@ module Discover
     end
 
     private
+    def parse(address)
+      URI.parse(address)
+    rescue URI::InvalidURIError
+      URI.parse("tcp://#{address}")
+    end
+
     def _register(name, port=nil, ip=nil, attributes={}, standby=false)
       reg = Registration.new(self, name, "#{ip}:#{port}", attributes, standby)
       @registrations << reg
