@@ -28,12 +28,12 @@ class TestServiceLeader < DiscoverIntegrationTest
     assert_nil service.leader
 
     registrations = []
-    registrations << @client.register(name, 1111, ip)
+    registrations << @client.register(name, "#{ip}:1111")
     sleep(0.5)
     assert_equal "#{ip}:1111", service.leader.address
 
-    registrations << @client.register(name, 2222, ip)
-    registrations << @client.register(name, 3333, ip)
+    registrations << @client.register(name, "#{ip}:2222")
+    registrations << @client.register(name, "#{ip}:3333")
     sleep(0.5)
     assert_equal "#{ip}:1111", service.leader.address
 
@@ -55,13 +55,13 @@ class TestServiceLeader < DiscoverIntegrationTest
     assert_equal 0, watcher.leader_updates.size
 
     registrations = []
-    registrations << @client.register(name, 1111, ip)
+    registrations << @client.register(name, "#{ip}:1111")
     sleep(0.5)
     assert_equal 1, watcher.leader_updates.size
     assert_equal "#{ip}:1111", watcher.leader_updates.last.address
 
-    registrations << @client.register(name, 2222, ip)
-    registrations << @client.register(name, 3333, ip)
+    registrations << @client.register(name, "#{ip}:2222")
+    registrations << @client.register(name, "#{ip}:3333")
     sleep(0.5)
     assert_equal 1, watcher.leader_updates.size
     assert_equal "#{ip}:1111", watcher.leader_updates.last.address

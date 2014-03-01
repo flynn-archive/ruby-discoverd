@@ -4,11 +4,10 @@ class TestRegistration < DiscoverIntegrationTest
   class TestRegisterStandby
     include Celluloid
 
-    def initialize(client, name, port, ip)
+    def initialize(client, name, address)
       @client  = client
       @name    = name
-      @port    = port
-      @ip      = ip
+      @address = address
       @elected = false
 
       async.register_and_standby
@@ -19,7 +18,7 @@ class TestRegistration < DiscoverIntegrationTest
     end
 
     def register_and_standby
-      @client.register_and_standby(@name, @port, @ip)
+      @client.register_and_standby(@name, @address)
 
       @elected = true
     end
@@ -27,18 +26,17 @@ class TestRegistration < DiscoverIntegrationTest
 
   def test_service_is_online_after_registration
     name       = "service-online"
-    port       = 1111
-    ip         = "127.0.0.1"
+    address    = "127.0.0.1:1111"
     attributes = { "foo" => "bar" }
 
-    @client.register name, port, ip, attributes
+    @client.register name, address, attributes
 
     service = @client.service(name)
     assert_equal 1, service.online.size
 
     instance = service.online.first
     assert_equal name, instance.name
-    assert_equal "#{ip}:#{port}", instance.address
+    assert_equal address, instance.address
     assert_equal attributes, instance.attributes
     assert instance.online?
 
@@ -47,11 +45,10 @@ class TestRegistration < DiscoverIntegrationTest
   end
 
   def test_service_is_offline_after_unregister
-    name       = "service-offline"
-    port       = 1111
-    ip         = "127.0.0.1"
+    name    = "service-offline"
+    address = "127.0.0.1:1111"
 
-    registration = @client.register name, port, ip
+    registration = @client.register name, address
 
     service = @client.service(name)
     assert_equal 1, service.online.size
@@ -64,11 +61,10 @@ class TestRegistration < DiscoverIntegrationTest
 
   def test_changing_service_attributes
     name       = "change-attributes"
-    port       = 1111
-    ip         = "127.0.0.1"
+    address    = "127.0.0.1:1111"
     attributes = { "foo" => "bar" }
 
-    @client.register name, port, ip, attributes
+    @client.register name, address, attributes
 
     service = @client.service(name)
     assert_equal 1, service.online.size
@@ -77,7 +73,7 @@ class TestRegistration < DiscoverIntegrationTest
     assert_equal attributes, instance.attributes
 
     new_attributes = { "foo" => "baz" }
-    @client.register name, port, ip, new_attributes
+    @client.register name, address, new_attributes
 
     service = @client.service(name)
     assert_equal 1, service.online.size
@@ -93,8 +89,8 @@ class TestRegistration < DiscoverIntegrationTest
     matching_attributes     = { "foo" => "bar", "baz" => "qux" }
     non_matching_attributes = { "foo" => "baz", "baz" => "qux" }
 
-    @client.register name, 1111, ip, matching_attributes
-    @client.register name, 2222, ip, non_matching_attributes
+    @client.register name, "#{ip}:1111", matching_attributes
+    @client.register name, "#{ip}:2222", non_matching_attributes
 
     service = @client.service(name)
     assert_equal 2, service.online.size
@@ -111,13 +107,13 @@ class TestRegistration < DiscoverIntegrationTest
     ip   = "127.0.0.1"
 
     registrations = []
-    registrations << @client.register(name, 1111, ip)
+    registrations << @client.register(name, "#{ip}:1111")
 
-    standby = TestRegisterStandby.new @client, name, 2222, ip
+    standby = TestRegisterStandby.new @client, name, "#{ip}:2222"
     sleep(0.5)
     assert !standby.elected?
 
-    registrations << @client.register(name, 3333, ip)
+    registrations << @client.register(name, "#{ip}:3333")
     sleep(0.5)
     assert !standby.elected?
 

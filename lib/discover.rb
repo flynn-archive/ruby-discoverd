@@ -20,12 +20,12 @@ module Discover
       Service.new(self, name, filters)
     end
 
-    def register(name, port=nil, ip=nil, attributes={})
-      _register(name, port, ip, attributes, false)
+    def register(name, address, attributes={})
+      _register(name, address, attributes, false)
     end
 
-    def register_and_standby(name, port=nil, ip=nil, attributes={})
-      _register(name, port, ip, attributes, true)
+    def register_and_standby(name, address, attributes={})
+      _register(name, address, attributes, true)
     end
 
     def remove_registration(reg)
@@ -43,8 +43,8 @@ module Discover
       URI.parse("tcp://#{address}")
     end
 
-    def _register(name, port=nil, ip=nil, attributes={}, standby=false)
-      reg = Registration.new(self, name, "#{ip}:#{port}", attributes, standby)
+    def _register(name, address, attributes={}, standby=false)
+      reg = Registration.new(self, name, address, attributes, standby)
       @registrations << reg
       reg.register
       reg
