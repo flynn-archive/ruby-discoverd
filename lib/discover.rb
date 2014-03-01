@@ -88,7 +88,7 @@ module Discover
         "Attrs" => @attributes
       }
 
-      @client.request("Agent.Register", args).value
+      @full_address = @client.request("Agent.Register", args).value
     end
 
     def send_unregister_request
@@ -121,7 +121,7 @@ module Discover
 
     def watch_leaders
       @client.service(@name).each_leader do |leader|
-        if leader.address == @address
+        if @full_address && leader.address == @full_address
           signal :elected
         end
       end

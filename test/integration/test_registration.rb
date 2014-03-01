@@ -24,6 +24,32 @@ class TestRegistration < DiscoverIntegrationTest
     end
   end
 
+  def test_explicit_address
+    name    = "explicit-address"
+    address = "5.6.7.8:1111"
+
+    @client.register name, address
+
+    service = @client.service(name)
+    assert_equal 1, service.online.size
+
+    instance = service.online.first
+    assert_equal address, instance.address
+  end
+
+  def test_implicit_address
+    name    = "implicit-address"
+    address = ":1111"
+
+    @client.register name, address
+
+    service = @client.service(name)
+    assert_equal 1, service.online.size
+
+    instance = service.online.first
+    assert_equal "#{EXTERNAL_IP}:1111", instance.address
+  end
+
   def test_service_is_online_after_registration
     name       = "service-online"
     address    = "127.0.0.1:1111"
@@ -61,7 +87,7 @@ class TestRegistration < DiscoverIntegrationTest
 
   def test_changing_service_attributes
     name       = "change-attributes"
-    address    = "127.0.0.1:1111"
+    address    = ":1111"
     attributes = { "foo" => "bar" }
 
     @client.register name, address, attributes
@@ -84,13 +110,12 @@ class TestRegistration < DiscoverIntegrationTest
 
   def test_service_with_filters
     name = "service-filters"
-    ip   = "127.0.0.1"
 
     matching_attributes     = { "foo" => "bar", "baz" => "qux" }
     non_matching_attributes = { "foo" => "baz", "baz" => "qux" }
 
-    @client.register name, "#{ip}:1111", matching_attributes
-    @client.register name, "#{ip}:2222", non_matching_attributes
+    @client.register name, ":1111", matching_attributes
+    @client.register name, ":2222", non_matching_attributes
 
     service = @client.service(name)
     assert_equal 2, service.online.size
@@ -104,16 +129,15 @@ class TestRegistration < DiscoverIntegrationTest
 
   def test_register_and_standby
     name = "register-and-standby"
-    ip   = "127.0.0.1"
 
     registrations = []
-    registrations << @client.register(name, "#{ip}:1111")
+    registrations << @client.register(name, ":1111")
 
-    standby = TestRegisterStandby.new @client, name, "#{ip}:2222"
+    standby = TestRegisterStandby.new @client, name, ":2222"
     sleep(0.5)
     assert !standby.elected?
 
-    registrations << @client.register(name, "#{ip}:3333")
+    registrations << @client.register(name, ":3333")
     sleep(0.5)
     assert !standby.elected?
 
