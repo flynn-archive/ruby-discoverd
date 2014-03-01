@@ -9,7 +9,7 @@ module Discover
       uri = parse(address || ENV["DISCOVERD"] || "127.0.0.1:1111")
 
       @client        = RPCPlus::Client.new(uri.host, uri.port)
-      @registrations = []
+      @registrations = {}
     end
 
     def request(*args, &block)
@@ -28,12 +28,12 @@ module Discover
       _register(name, address, attributes, true)
     end
 
-    def remove_registration(reg)
-      @registrations.delete(reg)
+    def remove_registration(address)
+      @registrations.delete(address)
     end
 
     def unregister_all
-      @registrations.each(&:unregister)
+      @registrations.values.each(&:unregister)
     end
 
     private
@@ -44,10 +44,15 @@ module Discover
     end
 
     def _register(name, address, attributes={}, standby=false)
-      reg = Registration.new(self, name, address, attributes, standby)
-      @registrations << reg
-      reg.register
-      reg
+      # Remove any existing registration for this address
+      if reg = remove_registration(address)
+        reg.stop_heartbeat
+      end
+
+      Registration.new(self, name, address, attributes, standby).tap do |reg|
+        @registrations[address] = reg
+        reg.register
+      end
     end
   end
 
@@ -73,7 +78,7 @@ module Discover
     def unregister
       stop_heartbeat
       send_unregister_request
-      @client.remove_registration(self)
+      @client.remove_registration(@address)
     end
 
     def send_register_request
