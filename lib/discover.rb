@@ -9,7 +9,7 @@ module Discover
       uri = parse(address || ENV["DISCOVERD"] || "127.0.0.1:1111")
 
       @client        = RPCPlus::Client.new(uri.host, uri.port)
-      @registrations = []
+      @registrations = {}
     end
 
     def request(*args, &block)
@@ -20,20 +20,20 @@ module Discover
       Service.new(self, name, filters)
     end
 
-    def register(name, port=nil, ip=nil, attributes={})
-      _register(name, port, ip, attributes, false)
+    def register(name, address, attributes={})
+      _register(name, address, attributes, false)
     end
 
-    def register_and_standby(name, port=nil, ip=nil, attributes={})
-      _register(name, port, ip, attributes, true)
+    def register_and_standby(name, address, attributes={})
+      _register(name, address, attributes, true)
     end
 
-    def remove_registration(reg)
-      @registrations.delete(reg)
+    def remove_registration(address)
+      @registrations.delete(address)
     end
 
     def unregister_all
-      @registrations.each(&:unregister)
+      @registrations.values.each(&:unregister)
     end
 
     private
@@ -43,11 +43,17 @@ module Discover
       URI.parse("tcp://#{address}")
     end
 
-    def _register(name, port=nil, ip=nil, attributes={}, standby=false)
-      reg = Registration.new(self, name, "#{ip}:#{port}", attributes, standby)
-      @registrations << reg
-      reg.register
-      reg
+    def _register(name, address, attributes={}, standby=false)
+      Registration.new(self, name, address, attributes, standby).tap do |reg|
+        reg.register
+
+        # Remove any existing registration for the full address
+        if old_reg = remove_registration(reg.full_address)
+          old_reg.stop_heartbeat
+        end
+
+        @registrations[reg.full_address] = reg
+      end
     end
   end
 
@@ -55,6 +61,8 @@ module Discover
     include Celluloid
 
     HEARTBEAT_INTERVAL = 5
+
+    attr_reader :full_address
 
     def initialize(client, name, address, attributes = {}, standby = false)
       @client     = client
@@ -73,7 +81,7 @@ module Discover
     def unregister
       stop_heartbeat
       send_unregister_request
-      @client.remove_registration(self)
+      @client.remove_registration(@full_address)
     end
 
     def send_register_request
@@ -83,7 +91,7 @@ module Discover
         "Attrs" => @attributes
       }
 
-      @client.request("Agent.Register", args).value
+      @full_address = @client.request("Agent.Register", args).value
     end
 
     def send_unregister_request
@@ -116,7 +124,7 @@ module Discover
 
     def watch_leaders
       @client.service(@name).each_leader do |leader|
-        if leader.address == @address
+        if @full_address && leader.address == @full_address
           signal :elected
         end
       end
