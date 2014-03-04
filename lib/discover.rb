@@ -44,14 +44,15 @@ module Discover
     end
 
     def _register(name, address, attributes={}, standby=false)
-      # Remove any existing registration for this address
-      if reg = remove_registration(address)
-        reg.stop_heartbeat
-      end
-
       Registration.new(self, name, address, attributes, standby).tap do |reg|
-        @registrations[address] = reg
         reg.register
+
+        # Remove any existing registration for the full address
+        if old_reg = remove_registration(reg.full_address)
+          old_reg.stop_heartbeat
+        end
+
+        @registrations[reg.full_address] = reg
       end
     end
   end
@@ -60,6 +61,8 @@ module Discover
     include Celluloid
 
     HEARTBEAT_INTERVAL = 5
+
+    attr_reader :full_address
 
     def initialize(client, name, address, attributes = {}, standby = false)
       @client     = client
@@ -78,7 +81,7 @@ module Discover
     def unregister
       stop_heartbeat
       send_unregister_request
-      @client.remove_registration(@address)
+      @client.remove_registration(@full_address)
     end
 
     def send_register_request
