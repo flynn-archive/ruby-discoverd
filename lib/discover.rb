@@ -106,9 +106,10 @@ module Discover
     def start_heartbeat
       @heartbeat = every(HEARTBEAT_INTERVAL) do
         @client.request(
-          "Agent.Heartbeat",
-          "Name" => @name,
-          "Addr" => @address
+          "Agent.Register",
+          "Name"  => @name,
+          "Addr"  => @address,
+          "Attrs" => @attributes
         )
       end
     end
